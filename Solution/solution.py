@@ -1,5 +1,6 @@
 import csv
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction import DictVectorizer
 
 FILENAME = "task_data.csv"
 TARGET_COLUMN = "Cardiomegaly"
@@ -13,7 +14,7 @@ def convert_comma_separated_number(number):
     return float(number)
 
 
-x_data = []  # List of samples
+x_data_dicts = []  # List of samples in dictionaries
 y_data = []  # List of labels
 
 # Extract data, convert data type and load into
@@ -44,13 +45,19 @@ with open(FILENAME, "r") as csvfile:
         row.pop("ID")  # ID column does not store useful data
 
         y_data.append(label)  # Append label to the list of labels
-        x_data.append(row)  # Append row to the list of samples
+        x_data_dicts.append(row)  # Append row to the list of samples
 
-x = x_data
+
+vectorizer = DictVectorizer(sparse=False)
+
+x = vectorizer.fit_transform(x_data_dicts)
 y = y_data
 
-# split data into training and test sets
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_SIZE, random_state=RANDOM_STATE)
+# Split data into training and test sets
+x_train, x_test, y_train, y_test = train_test_split(
+    x,
+    y,
+    test_size=TEST_SIZE,
+    random_state=RANDOM_STATE
+)
 
-print(x_train)
-print(y_train)
