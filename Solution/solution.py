@@ -1,11 +1,12 @@
 import csv
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.preprocessing import StandardScaler
 
 FILENAME = "task_data.csv"
 TARGET_COLUMN = "Cardiomegaly"
 TEST_SIZE = 0.2
-RANDOM_STATE = 123
+RANDOM_STATE = 123 # To guarantee the same results for each program run
 
 
 # Some strings contain comma instead of dot
@@ -20,7 +21,7 @@ y_data = []  # List of labels
 # Extract, preprocess and load data into separate lists of labels and samples
 
 with open(FILENAME, "r") as csvfile:
-    data = csv.DictReader(csvfile) # Load csv file
+    data = csv.DictReader(csvfile)  # Load csv file
     for row in data:
         # Convert string with comma into float using convert_comma_separated_number() function
 
@@ -57,5 +58,51 @@ x_train, x_test, y_train, y_test = train_test_split(
     x,
     y,
     test_size=TEST_SIZE,
-    random_state=RANDOM_STATE
+    random_state=RANDOM_STATE,
+    stratify=y
+    # To make sure that train and test splits have the same
+    # percentage of each class as the dataset, I use stratify=y.
 )
+
+# Scale features to use other ML methods such as
+# LogisticRegression, KNeighborsClassifier and SVC
+
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+
+# Train some models
+
+# Import Classical Machine Learning Methods
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+# Import Classification Quality Metrics
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score)
+
+DTC = DecisionTreeClassifier(random_state=RANDOM_STATE)
+RFC = RandomForestClassifier(random_state=RANDOM_STATE)
+
+for model in [DTC, RFC]:
+    model.fit(x_train, y_train)
+    y_pred = model.predict(x_test)
+
+    # Compare models efficiency using Classification Quality Metrics
+    acc_scr = accuracy_score(y_test, y_pred)
+    prec_scr = precision_score(y_test, y_pred)
+    rec_scr = recall_score(y_test, y_pred)
+    f1_scr = f1_score(y_test, y_pred)
+
+    print(f"""
+        --------------------------------------
+        ML Method: {model}
+        Accuracy score: {acc_scr}
+        Precision score: {prec_scr}
+        Recall score: {rec_scr}
+        F1 Score: {f1_scr}
+        --------------------------------------
+    """)

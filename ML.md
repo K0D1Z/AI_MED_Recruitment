@@ -27,6 +27,11 @@ A classification method that finds a hyperplane that best separates classes in t
 A probabilistic model used for binary classification. It estimates the probability of a sample belonging to a given class and classifies it based on a threshold (e.g., 0.5). It is a simple and interpretable model, often used as a baseline for classification tasks. A precursor to neural networks. <br/>
 📖 Documentation: [LogisticRegression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)
 
+
+
+
+
+
 # Classification Quality Metrics
 
 To evaluate the performance of classification models, various metrics are used. The most common ones include:
