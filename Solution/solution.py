@@ -17,10 +17,10 @@ def convert_comma_separated_number(number):
 x_data_dicts = []  # List of samples in dictionaries
 y_data = []  # List of labels
 
-# Extract data, convert data type and load into
+# Extract, preprocess and load data into separate lists of labels and samples
 
 with open(FILENAME, "r") as csvfile:
-    data = csv.DictReader(csvfile)
+    data = csv.DictReader(csvfile) # Load csv file
     for row in data:
         # Convert string with comma into float using convert_comma_separated_number() function
 
@@ -47,10 +47,9 @@ with open(FILENAME, "r") as csvfile:
         y_data.append(label)  # Append label to the list of labels
         x_data_dicts.append(row)  # Append row to the list of samples
 
+vectorizer = DictVectorizer(sparse=False)  # Converts the list of dicts into a matrix.
 
-vectorizer = DictVectorizer(sparse=False)
-
-x = vectorizer.fit_transform(x_data_dicts)
+x = vectorizer.fit_transform(x_data_dicts)  # Ensures a fixed column order required by the model.
 y = y_data
 
 # Split data into training and test sets
@@ -60,4 +59,3 @@ x_train, x_test, y_train, y_test = train_test_split(
     test_size=TEST_SIZE,
     random_state=RANDOM_STATE
 )
-
