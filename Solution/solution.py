@@ -1,12 +1,30 @@
+# Import module to read data from csv file
 import csv
+
+# Import modules for preprocessing and splitting data
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import StandardScaler
 
+# Import Classical Machine Learning Methods
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+
+# Import Classification Quality Metrics
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score)
+
+# Constant variables
 FILENAME = "task_data.csv"
 TARGET_COLUMN = "Cardiomegaly"
 TEST_SIZE = 0.2
-RANDOM_STATE = 123 # To guarantee the same results for each program run
+RANDOM_STATE = 123  # To guarantee the same results for each program run
 
 
 # Some strings contain comma instead of dot
@@ -64,8 +82,9 @@ x_train, x_test, y_train, y_test = train_test_split(
     # percentage of each class as the dataset, I use stratify=y.
 )
 
-# Scale features to use other ML methods such as
-# LogisticRegression, KNeighborsClassifier and SVC
+# Scale features to similar range of value to use
+# other ML methods such as LogisticRegression,
+# KNeighborsClassifier and SVC
 
 scaler = StandardScaler()
 x_train = scaler.fit_transform(x_train)
@@ -73,21 +92,13 @@ x_test = scaler.transform(x_test)
 
 # Train some models
 
-# Import Classical Machine Learning Methods
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+DTC_model = DecisionTreeClassifier(random_state=RANDOM_STATE)
+RFC_model = RandomForestClassifier(random_state=RANDOM_STATE)
+KNC_model = KNeighborsClassifier()  # WITHOUT RANDOM_STATE
+SVC_model = SVC(random_state=RANDOM_STATE)
+LR_model = LogisticRegression(random_state=RANDOM_STATE)
 
-# Import Classification Quality Metrics
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score)
-
-DTC = DecisionTreeClassifier(random_state=RANDOM_STATE)
-RFC = RandomForestClassifier(random_state=RANDOM_STATE)
-
-for model in [DTC, RFC]:
+for model in [DTC_model, RFC_model, KNC_model, SVC_model, LR_model]:
     model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
 
