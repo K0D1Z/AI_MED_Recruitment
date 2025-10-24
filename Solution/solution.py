@@ -2,7 +2,6 @@
 import csv
 
 # Import modules for preprocessing and splitting data
-from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import StandardScaler
 import numpy as np
@@ -21,15 +20,19 @@ from sklearn.metrics import (
     recall_score,
     f1_score)
 
-# Import Cross-Validation feature 
+# Import Cross-Validation feature
 from sklearn.model_selection import StratifiedKFold
+
+# I use StratifiedKFold to ensure
+# that the label data is always split in
+# an equal proportion for each fold test
+# as it is in the entire dataset
 
 # Constant variables
 FILENAME = "task_data.csv"
 TARGET_COLUMN = "Cardiomegaly"
-TEST_SIZE = 0.2
 RANDOM_STATE = 123  # To guarantee the same results for each program run
-MAX_ITER = 1000
+MAX_ITER = 1000  # Max interation in Logistic Regression
 N_SPLITS = 5  # Number of CV tests (nr of folds)
 
 
@@ -45,7 +48,7 @@ y_data = []  # List of labels
 # Extract, preprocess and load data into separate lists of labels and samples
 
 with open(FILENAME, "r") as csvfile:
-    data = csv.DictReader(csvfile)  # Load csv file
+    data = csv.DictReader(csvfile)
     for row in data:
         # Convert string with comma into float using convert_comma_separated_number() function
 
@@ -72,34 +75,38 @@ with open(FILENAME, "r") as csvfile:
         y_data.append(label)  # Append label to the list of labels
         x_data_dicts.append(row)  # Append row to the list of samples
 
-vectorizer = DictVectorizer(sparse=False)  # Converts the list of dicts into a matrix.
+vectorizer = DictVectorizer(sparse=False)  # Converts the list of dicts into a matrix
 
-x = vectorizer.fit_transform(x_data_dicts)  # Ensures a fixed column order required by the model.
-y = np.array(y_data)
+x = vectorizer.fit_transform(x_data_dicts)  # Ensures a fixed column order required by the model
+y = np.array(y_data) # y assigned to NumPy array to enable indexing in SKF loop
 
-# Scale features to similar range of value to use
-# other ML methods such as LogisticRegression,
-# KNeighborsClassifier and SVC
-
-SKF = StratifiedKFold(n_splits=N_SPLITS, shuffle=True,
+# SKF used to get a reliable accuracy score by averaging N_SPLITS tests (K-Fold Cross-Validation)
+SKF = StratifiedKFold(n_splits=N_SPLITS,
+                      shuffle=True,
                       random_state=RANDOM_STATE)  # Shuffle data randomly before folding
 
 models_result = {}
 
+# Five different ML models created to test and compare their effectiveness
 models = {
-    "DTC_model": DecisionTreeClassifier(random_state=RANDOM_STATE),
-    "RFC_model": RandomForestClassifier(random_state=RANDOM_STATE),
-    "KNC_model": KNeighborsClassifier(),  # WITHOUT RANDOM_STATE
-    "SVC_model": SVC(random_state=RANDOM_STATE),
-    "LR_model": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER),
+    "Decision Tree Classifier": DecisionTreeClassifier(random_state=RANDOM_STATE),
+    "Random Forest Classifier": RandomForestClassifier(random_state=RANDOM_STATE),
+    "KNeighbors Classifier": KNeighborsClassifier(),  # WITHOUT RANDOM_STATE
+    "SVC": SVC(random_state=RANDOM_STATE),
+    "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER),
 }
 
-print(f"Starting Cross-Validation for {len(models)} models...")
+print(f"Starting Cross-Validation for {len(models)} models...\n\n")
 for model_name, model in models.items():
     fold_scores = {"Accuracy Score": 0,
                    "Precision Score": 0,
                    "Recall Score": 0,
                    "F1 Score": 0}
+
+    # Scale features to similar range of value to use
+    # other ML methods such as LogisticRegression,
+    # KNeighborsClassifier and SVC
+    scaler = StandardScaler()
     for train_index, test_index in SKF.split(x, y):
         x_train = x[train_index]
         x_test = x[test_index]
@@ -107,17 +114,16 @@ for model_name, model in models.items():
         y_train = y[train_index]
         y_test = y[test_index]
 
-        scaler = StandardScaler()
-
         x_train_scaled = scaler.fit_transform(x_train)
         x_test_scaled = scaler.transform(x_test)
 
         model.fit(x_train_scaled, y_train)
         y_pred = model.predict(x_test_scaled)
 
+        # Compare models efficiency using Classification Quality Metrics
         acc_scr = accuracy_score(y_test, y_pred)
         prec_scr = precision_score(y_test, y_pred, zero_division=0)
-        rec_scr = recall_score(y_test, y_pred)
+        rec_scr = recall_score(y_test, y_pred, zero_division=0)
         f1_scr = f1_score(y_test, y_pred, zero_division=0)
 
         fold_scores["Accuracy Score"] += acc_scr
@@ -125,31 +131,19 @@ for model_name, model in models.items():
         fold_scores["Recall Score"] += rec_scr
         fold_scores["F1 Score"] += f1_scr
 
-    # Calculate results mean
+    # Calculate tests mean
     for m, r in fold_scores.items():
         r /= N_SPLITS
         fold_scores[m] = r
 
     models_result[model_name] = fold_scores
 
-print(models_result)
-
-# for model in [DTC_model, RFC_model, KNC_model, SVC_model, LR_model]:
-#     model.fit(x_train, y_train)
-#     y_pred = model.predict(x_test)
-
-#     # Compare models efficiency using Classification Quality Metrics
-#     acc_scr = accuracy_score(y_test, y_pred)
-#     prec_scr = precision_score(y_test, y_pred)
-#     rec_scr = recall_score(y_test, y_pred)
-#     f1_scr = f1_score(y_test, y_pred)
-
-#     print(f"""
-#         --------------------------------------
-#         ML Method: {model}
-#         Accuracy score: {acc_scr}
-#         Precision score: {prec_scr}
-#         Recall score: {rec_scr}
-#         F1 Score: {f1_scr}
-#         --------------------------------------
-#     """)
+# Print out models results
+for model, tests in models_result.items():
+    print("------------------------------------------")
+    print(f"Average scores for {model}")
+    print("------------------------------------------")
+    for test_name, avg_score in tests.items():
+        print(f"{test_name}: {avg_score}")
+    print("------------------------------------------")
+    print("\n\n")
