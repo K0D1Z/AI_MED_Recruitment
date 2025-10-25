@@ -22,11 +22,13 @@ from sklearn.metrics import (
 
 # Import Cross-Validation feature
 from sklearn.model_selection import StratifiedKFold
-
 # I use StratifiedKFold to ensure
 # that the label data is always split in
 # an equal proportion for each fold test
 # as it is in the entire dataset
+
+# Import pandas for table summary
+import pandas as pd
 
 # Constant variables
 FILENAME = "task_data.csv"
@@ -78,7 +80,7 @@ with open(FILENAME, "r") as csvfile:
 vectorizer = DictVectorizer(sparse=False)  # Converts the list of dicts into a matrix
 
 x = vectorizer.fit_transform(x_data_dicts)  # Ensures a fixed column order required by the model
-y = np.array(y_data) # y assigned to NumPy array to enable indexing in SKF loop
+y = np.array(y_data)  # y assigned to NumPy array to enable indexing in SKF loop
 
 # SKF used to get a reliable accuracy score by averaging N_SPLITS tests (K-Fold Cross-Validation)
 SKF = StratifiedKFold(n_splits=N_SPLITS,
@@ -91,12 +93,12 @@ models_result = {}
 models = {
     "Decision Tree Classifier": DecisionTreeClassifier(random_state=RANDOM_STATE),
     "Random Forest Classifier": RandomForestClassifier(random_state=RANDOM_STATE),
-    "KNeighbors Classifier": KNeighborsClassifier(),  # WITHOUT RANDOM_STATE
+    "KNeighbors Classifier": KNeighborsClassifier(),  # Without random_state
     "SVC": SVC(random_state=RANDOM_STATE),
-    "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER),
+    "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER),  # max_iter added
 }
 
-print(f"Starting Cross-Validation for {len(models)} models...\n\n")
+print(f"Starting Cross-Validation for {len(models)} models...\n")
 for model_name, model in models.items():
     fold_scores = {"Accuracy Score": 0,
                    "Precision Score": 0,
@@ -107,20 +109,25 @@ for model_name, model in models.items():
     # other ML methods such as LogisticRegression,
     # KNeighborsClassifier and SVC
     scaler = StandardScaler()
+
     for train_index, test_index in SKF.split(x, y):
+        # Split data into training and test sets for current fold
         x_train = x[train_index]
         x_test = x[test_index]
 
         y_train = y[train_index]
         y_test = y[test_index]
 
+        # Scale x_train and x_test features
         x_train_scaled = scaler.fit_transform(x_train)
         x_test_scaled = scaler.transform(x_test)
 
+        # Train the model and predict results
         model.fit(x_train_scaled, y_train)
         y_pred = model.predict(x_test_scaled)
 
-        # Compare models efficiency using Classification Quality Metrics
+        # Compare models efficiency using Classification Quality Metrics for the current fold
+        # Prevent ZeroDivisionError while calculating results by adding zero_division=0
         acc_scr = accuracy_score(y_test, y_pred)
         prec_scr = precision_score(y_test, y_pred, zero_division=0)
         rec_scr = recall_score(y_test, y_pred, zero_division=0)
@@ -136,14 +143,23 @@ for model_name, model in models.items():
         r /= N_SPLITS
         fold_scores[m] = r
 
+    # Assign model score to the fold_scores dictionary
     models_result[model_name] = fold_scores
 
-# Print out models results
-for model, tests in models_result.items():
-    print("------------------------------------------")
-    print(f"Average scores for {model}")
-    print("------------------------------------------")
-    for test_name, avg_score in tests.items():
-        print(f"{test_name}: {avg_score}")
-    print("------------------------------------------")
-    print("\n\n")
+# Change pandas options to display all table's columns
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.width', 1000)
+
+# Summary results in table
+results = pd.DataFrame.from_dict(models_result, orient='index')
+results = results.sort_values(by="Accuracy Score", ascending=False)
+print("-----------Average Cross-Validation Scores for Cardiomegaly Prediction-----------")
+print(results)
+
+# Save results to csv file
+results.to_csv("model_comparison_results.csv")
+
+# KNeighbours Classifier and SVC models performance is the best.
+# Code is now correct, but we can improve models performance by adding hyperparamethers.
+# GridSearchCV might be used to improve KNeighbours Classifier and SVC models performance.
