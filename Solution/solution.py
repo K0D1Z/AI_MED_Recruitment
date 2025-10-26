@@ -36,7 +36,7 @@ TARGET_COLUMN = "Cardiomegaly"
 RANDOM_STATE = 123  # To guarantee the same results for each program run
 MAX_ITER = 1000  # Max interation in Logistic Regression
 N_SPLITS = 5  # Number of CV tests (nr of folds)
-
+N_JOBS = -1
 
 # Some strings contain comma instead of dot
 def convert_comma_separated_number(number):
@@ -92,10 +92,10 @@ models_result = {}
 # Five different ML models created to test and compare their effectiveness
 models = {
     "Decision Tree Classifier": DecisionTreeClassifier(random_state=RANDOM_STATE),
-    "Random Forest Classifier": RandomForestClassifier(random_state=RANDOM_STATE),
-    "KNeighbors Classifier": KNeighborsClassifier(),  # Without random_state
+    "Random Forest Classifier": RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=N_JOBS), #n_jobs added to use all available CPU cores for parallel computation
+    "KNeighbors Classifier": KNeighborsClassifier(n_jobs=N_JOBS),  # Without random_state
     "SVC": SVC(random_state=RANDOM_STATE),
-    "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER),  # max_iter added
+    "Logistic Regression": LogisticRegression(random_state=RANDOM_STATE, max_iter=MAX_ITER, n_jobs=N_JOBS),  # max_iter added
 }
 
 print(f"Starting Cross-Validation for {len(models)} models...\n")
